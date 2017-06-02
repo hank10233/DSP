@@ -1,0 +1,221 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+		{
+			"contents": "#include \"ASA_Lib.h\"\n#include \"ASA_MAX7219.h\"\n\n#define MAX7219_ADDR_DECODE       0x09\n#define MAX7219_ADDR_INTENSITY    0x0A\n#define MAX7219_ADDR_SCAN_LIMIT   0x0B\n#define MAX7219_ADDR_POWER        0x0C\n#define MAX7219_ADDR_TEST         0x0F\n#define MAX7219_ADDR_NOOP         0x00\n\n\nint main() {\n    ASA_M128_set();\n    printf(\"start!-----------------------------\\n\");\n    char ASA_ID = 1;\n    char check,i;\n    char data,Addr,LSByte;\n    int input;\n    \n    char matrix[8]={\n    0b11111111,\n    0b01000000,\n    0b00100000,\n    0b00010000,\n    0b00001000,\n    0b00000100,\n    0b00000010,\n    0b11111111\n    };\n\n    ASA_MAX7219_ini();\n\tM128_DIO_fpt(ADDR_PORT_num,ADDR_PORT_msk,ADDR_PORT_sht,ASA_ID);\n\t_delay_ms(250);\n   /* for(i=1;i<=8;i++){\n        ASA_MAX7219_put(ASA_ID,i,0,&matrix[i-1]);\n        _delay_ms(10);\n    }\n\t*/\n\tdata=1,LSByte=203;ASA_MAX7219_set(ASA_ID,LSByte,1,0xFF,0,&data); // 關閉 SHOTDOWN模式\n    data=0,LSByte=204;ASA_MAX7219_set(ASA_ID,LSByte,1,0xFF,0,&data); // 關閉 DISPLAY_TEST MODE\n    data=7,LSByte=202;ASA_MAX7219_set(ASA_ID,LSByte,1,0xFF,0,&data); // 顯示7位數\n    data=0,LSByte=201;ASA_MAX7219_set(ASA_ID,LSByte,1,0xFF,0,&data); // 亮度0(最低)\n    _delay_ms(200);\n\t\tfor(i=0;i<8;i++){\n\t\t\tASA_MAX7219_put(ASA_ID,i+1,1,&matrix[i]);\n\t\t\t_delay_ms(10);\n\t\t}\n    while (1) {\n\t\t\n\t\t\t//scanf(\"%d\", &input);\n\t\t\t//data = input;\n\t\t\t//ASA_MAX7219_put(ASA_ID,,1,&data);\n\t\t\t//M128_SPI_put(0,3,1,&data);\n\t\t\t/*M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT, 1);\n\t\t\tM128_SPI_swap(MAX7219_ADDR_TEST);\n\t\t\tM128_SPI_swap(data);\n\t\t\tM128_SPI_put(0,MAX7219_ADDR_TEST, 1,&data);\n\t\t\tM128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT, 0);\n\t\t\t*/\n    }\n    return 0;\n}\n",
+			"file": "003.c",
+			"file_size": 1742,
+			"file_write_time": 131359758477494638,
+			"settings":
+			{
+				"buffer_size": 1656,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"last_filter": "Package Control: ",
+		"selected_items":
+		[
+			[
+				"Package Control: ",
+				"Package Control: Install Package"
+			],
+			[
+				" Conver",
+				"Plugin Development: Convert Syntax to .sublime-syntax"
+			]
+		],
+		"width": 424.0
+	},
+	"console":
+	{
+		"height": 432.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)",
+			"ls",
+			"import urllib.request,os,hashlib; h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/C/Users/hank10233/Documents/AVRStudio/sp4/003/003.sublime-project",
+		"/C/Users/hank10233/Documents/AVRStudio/sp4/003/003.aps",
+		"/C/Users/hank10233/AppData/Roaming/Sublime Text 3/Packages/User/Package Control.sublime-settings"
+	],
+	"find":
+	{
+		"height": 0.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "003.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1656,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								609,
+								609
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 337.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 31.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "003.sublime-project",
+	"replace":
+	{
+		"height": 0.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
