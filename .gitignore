@@ -1,5 +1,10 @@
 # Prerequisites
 *.d
+*.aps
+*aws
+*.lss
+*.eep
+
 
 # Object files
 *.o
