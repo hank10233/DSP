@@ -1,8 +1,10 @@
 #include "ASA_SPI.h"
 #include <stdio.h>
 char M128_SPI_swap(char Data){
+	M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT,1);
 	SPDR = Data;
 	while( !(bit_check(SPSR,SPIF)) );
+	M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT,0);
 	return SPDR;
 }
 
@@ -36,8 +38,6 @@ char M128_SPI_put(char NoAdd, char Addr, char Bytes, void *Data_p) {
 	if ( NoAdd > 1 ) { return 1; }
 	if ( Bytes < 0 ) { return 1; }
 
-	M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT,1);
-
 	if ( NoAdd==0 ) {
 		M128_SPI_swap(Addr);
 		if ( bit_check(SPSR,WCOL) ) { return 1; }
@@ -46,9 +46,6 @@ char M128_SPI_put(char NoAdd, char Addr, char Bytes, void *Data_p) {
 		*((char*)Data_p +i) = M128_SPI_swap( *((char*)Data_p +i) );
 		if ( bit_check(SPSR,WCOL) ) { return 1; }
 	}
-
-	M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT,0);
-
 	return 0;
 }
 
@@ -56,8 +53,6 @@ char M128_SPI_get(char NoAdd, char Addr, char Bytes, void *Data_p) {
 	if ( NoAdd > 1 ) { return 1; }
 	if ( Bytes < 0 ) { return 1; }
 
-	M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT,1);
-
 	if ( NoAdd==0 ) {
 		M128_SPI_swap(Addr);
 		if ( bit_check(SPSR,WCOL) ) { return 1; }
@@ -66,8 +61,5 @@ char M128_SPI_get(char NoAdd, char Addr, char Bytes, void *Data_p) {
 		*((char*)Data_p +i) = M128_SPI_swap( *((char*)Data_p +i) );
 		if ( bit_check(SPSR,WCOL) ) { return 1; }
 	}
-
-	M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT,0);
-
 	return 0;
 }

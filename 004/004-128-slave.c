@@ -63,12 +63,11 @@ char Shift;
 char CheckSum;
 void* Data_p;
 //char Data[MAXBUFFBYTES];
+//Data若宣告在struct裡則不能realloc Data,可能原因:struct沒有被重新分配記憶體大小
 } TypeOfslave_SPI_PacDe;
 
 TypeOfslave_SPI_PacDe slave_SPI_PacDe_str;
 
-//volatile TypeOfslave_SPI_swap* STR_p;
-//volatile TypeOfBuffer* IB_p;
 
 void slave_SPI_swap_ini(TypeOfslave_SPI_swap* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p){
 	str_p->status=receiving;
@@ -82,7 +81,6 @@ void slave_SPI_swap_ini(TypeOfslave_SPI_swap* str_p,TypeOfBuffer* OutBuff_p,Type
 //通訊封包處理及回應產生器初始函式
 void slave_SPI_PacDe_ini(TypeOfslave_SPI_PacDe* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p){
 	str_p->status=STATUS_HEADER;
-	//str_p->Data_p = str_p->Data;
 	str_p->Data_p = NULL;
 	str_p->OutBUFF_p=OutBuff_p;
 	str_p->InBUFF_p=InBuff_p;
@@ -94,10 +92,6 @@ void slave_SPI_swap_step(void){
 	if((str_p->InBUFF_p->PUTindex+1)%MAXBUFFBYTES != str_p->InBUFF_p->GETindex){ // avoid data crush
 		str_p-> InBUFF_p->data[ str_p->InBUFF_p->PUTindex ] = SPDR;
 		str_p-> InBUFF_p->PUTindex = (str_p->InBUFF_p->PUTindex+1)%MAXBUFFBYTES;
-		//STR_p=str_p;
-		//IB_p=str_p->InBUFF_p;
-		//Pindex_p=&(str_p-> InBUFF_p->PUTindex);
-		//count_ISR=count_ISR+1;
 	}
 	if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex){
 		SPDR = str_p->OutBUFF_p->data[ str_p->OutBUFF_p->GETindex ];
@@ -119,6 +113,7 @@ void slave_SPI_swap_step(void){
 }
 
 //SPI通訊處理器狀態切換函式
+//未使用
 char slave_SPI_swap_ss(TypeOfslave_SPI_swap* str_p){
 	char res=0;
 	switch(str_p->status){
@@ -143,17 +138,7 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 	char result =0;
 	char rcheck_sum = 0;
 	char datemp=0;
-			//printf("InBUFF_p  %d\n",str_p->InBUFF_p);
-			//printf("GETindex  %d\n",str_p->InBUFF_p->GETindex);
-			//printf("PUTindex  %d\n",str_p->InBUFF_p->PUTindex);
-			//printf("PUTindex_p  %d\n",&str_p->InBUFF_p->PUTindex);
-			//printf("GETindex_P  %d\n",&str_p->InBUFF_p->GETindex);
-			//printf("I_S_P  %d\n",STR_p);
-			//printf("I_I_P  %d\n",IB_p);
-			//printf("I_I_P_P  %d\n",Pindex_p);
-			//printf("I_C  %d\n",count_ISR);
-			//printf("TestData  %d  %d\n",TestData[0],TestData[1]);
-			//_delay_ms(50);
+
 	if(str_p->InBUFF_p->PUTindex == str_p->InBUFF_p->GETindex ) return 0;
 	switch(str_p->status){
 		case STATUS_HEADER :
@@ -232,7 +217,6 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 		case STATUS_DATA:
 			datemp=str_p->InBUFF_p->data[str_p->InBUFF_p->GETindex];
 			*((char*)str_p->Data_p + BytesCount) = datemp-BytesCount;
-
 			datemp=*((char*)str_p->Data_p + BytesCount);
 			check_sum = check_sum+datemp+BytesCount;
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
@@ -417,9 +401,7 @@ int main(void){
 	slave_SPI_PacDe_ini(&slave_SPI_PacDe_str,&Res_Buff_str,&Com_Buff_str);
 	TestData[0]=87;
 	TestData[1]=78;
-	/*
 
-	 */
 	while(1){
 
 		slave_SPI_PacDe_step(&slave_SPI_PacDe_str);
@@ -443,26 +425,3 @@ ISR(SPI_STC_vect){
 	slave_SPI_swap_step();
 }
 
-/*
-char data=0;
-
-
-
-int main(void){
-	
-	
-	while(1){
-		printf("main %d\n",data);
-		
-		_delay_ms(2500);
-	}
-}
-
-ISR(SPI_STC_vect){
-	data=SPDR;
-	printf("%d\n",data);
-	data++;
-	SPDR=data;
-}
-
- */
