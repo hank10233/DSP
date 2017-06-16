@@ -1,8 +1,7 @@
 #ifndef __ASA_MAX7219_H__
 #define __ASA_MAX7219_H__
 
-#include "ASA_DIO.h"
-#include "ASA_SPI.h"
+#include "..\LLL\ASA_SPI.h"
 #include <avr/io.h>
 
 

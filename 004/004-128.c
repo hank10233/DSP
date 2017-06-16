@@ -1,37 +1,6 @@
 
-#include "ASA_Lib.h"
-#include "ASA_SPI.h"
-
-/*
-void ASA_master_ini(){
-    // set ADDR pins (PB5~7) as output
-    DDRB=(1<<PB5)|(1<<PB6)|(1<<PB7)|(1<<DD_SCK)|(1<<DD_MOSI);
-    DDRF=(1<<PF4);
-	SPCR=(1<<SPE)|(1<<MSTR);
-	PORTB|=(1<<DD_SS);
-}
-
-int main(void){
-	ASA_M128_set();
-	ASA_master_ini();
-	int input;
-	char data,data2;
-	M128_DIO_fpt(ADDR_PORT_num,ADDR_PORT_msk,ADDR_PORT_sht,ASA_ID);
-	M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT,1);
-
-	scanf("%d",&input);
-	data = input;
-	data2=M128_SPI_swap(data);
-	printf("%d\n",data2 );
-	data2=M128_SPI_swap(data);
-	printf("tdata=%d  ",data2);
-
-	M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT,0);
-
-}
- */
-
-
+#include "..\LLL\ASA_Lib.h"
+#include "..\LLL\ASA_SPI.h"
 
 #define HEADER 0x87
 #define REHEADER 0x88
@@ -139,7 +108,7 @@ char ASA_SPI_set(char ASAID,char LSBbyte,char Mask,char Shift,char Data){
 			LoadCount=LoadCount+1;
 			_delay_ms(10);
 		}
-		if(LoadCount==1000) {   4; } //timeout 10s
+		if(LoadCount==1000) {  return 4; } //timeout 10s
 	}
 	M128_SPI_get(1,0,1,getdata_p);
 	result=*getdata_p;

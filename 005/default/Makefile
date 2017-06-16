@@ -1,11 +1,11 @@
 ###############################################################################
-# Makefile for the project 004-128-slave
+# Makefile for the project 005
 ###############################################################################
 
 ## General Flags
-PROJECT = 004-128-slave
+PROJECT = 005
 MCU = atmega128
-TARGET = 004-128-slave.elf
+TARGET = 005.elf
 CC = avr-gcc
 
 CPP = avr-g++
@@ -15,7 +15,7 @@ COMMON = -mmcu=$(MCU)
 
 ## Compile options common for all C compilation units.
 CFLAGS = $(COMMON)
-CFLAGS += -Wall -gdwarf-2 -std=gnu99   -DF_CPU=11059200UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
+CFLAGS += -Wall -gdwarf-2 -std=gnu99 -DF_CPU=11059200UL -Os -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 CFLAGS += -MD -MP -MT $(*F).o -MF dep/$(@F).d 
 
 ## Assembly specific flags
@@ -25,7 +25,7 @@ ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
 
 ## Linker flags
 LDFLAGS = $(COMMON)
-LDFLAGS +=  -Wl,-Map=004-128-slave.map
+LDFLAGS +=  -Wl,-Map=005.map
 
 
 ## Intel Hex file production flags
@@ -37,19 +37,19 @@ HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
 ## Objects that must be built in order to link
-OBJECTS = 004-128-slave.o SPI_slave.o 
+OBJECTS = 005.o ASA_DIO.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = "C:\Users\hank10233\Documents\AVRStudio\sp4\LLL\ASA_Lib.o" 
 
 ## Build
-all: $(TARGET) 004-128-slave.hex 004-128-slave.eep 004-128-slave.lss size
+all: $(TARGET) 005.hex 005.eep 005.lss size
 
 ## Compile
-004-128-slave.o: ../004-128-slave.c
+005.o: ../005.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-SPI_slave.o: ../SPI_slave.c
+ASA_DIO.o: ../../LLL/ASA_DIO.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link
@@ -72,7 +72,7 @@ size: ${TARGET}
 ## Clean target
 .PHONY: clean
 clean:
-	-rm -rf $(OBJECTS) 004-128-slave.elf dep/* 004-128-slave.hex 004-128-slave.eep 004-128-slave.lss 004-128-slave.map
+	-rm -rf $(OBJECTS) 005.elf dep/* 005.hex 005.eep 005.lss 005.map
 
 
 ## Other dependencies

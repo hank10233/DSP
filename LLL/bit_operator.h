@@ -23,7 +23,7 @@
 //清除目標變數的遮罩區位元為0
 #define bits_get(source, mask, shift) (((source) & (mask)) >> shift)
 //讀取來源變數之連續遮罩區位元串並向右位移對齊取得遮罩區位元串對應整數值
-#define bits_put(source, dest, mask, shift) (dest = bits_clear(dest,mask) | ((source <<shift) & mask))
+#define bits_put(source, dest, mask, shift) (dest = (dest&~mask) | ((source <<shift) & mask))
 //將資料來源左移到其所佔用旗標群區域後蓋寫到目標變數
 
 #endif
