@@ -1,4 +1,5 @@
-#include "..\LLL\ASA_SPI.h"
+#include "..\LLL\ASA_Lib.h"
+#include "..\LLL\ASA_general.h"
 #include <stdlib.h>
 
 #define MAXBUFFBYTES 32
@@ -56,12 +57,7 @@ TypeOfBuffer Res_Buff_str;
 TypeOfslave_SPI_swap slave_SPI_swap_str;
 TypeOfslave_SPI_PacDe slave_SPI_PacDe_str;
 
-char slave_set(char LSByte,char Mask,char Shift,char Data);
-char slave_put(char LSByte,char Bytes,void*  Data_p);
-char slave_get(char LSByte,char Bytes,void*  Data_p);
-char slave_fpt(char LSByte,char Mask,char Shift,char Data);
-char slave_fgt(char LSByte,char Mask,char Shift,char *Data);
-void slave_ini();
+void slave_SPI_ini();
 void slave_SPI_swap_ini(TypeOfslave_SPI_swap* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
 void slave_SPI_PacDe_ini(TypeOfslave_SPI_PacDe* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
 void slave_SPI_swap_step(void);

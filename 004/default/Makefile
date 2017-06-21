@@ -49,7 +49,7 @@ all: $(TARGET) 004-128-slave.hex 004-128-slave.eep 004-128-slave.lss size
 004-128-slave.o: ../004-128-slave.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-SPI_slave.o: ../SPI_slave.c
+SPI_slave.o: ../../LLL/SPI_slave.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link

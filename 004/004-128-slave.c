@@ -1,5 +1,5 @@
 #include "..\LLL\ASA_Lib.h"
-#include "SPI_slave.h"
+#include "..\LLL\SPI_slave.h"
 
 int main(void){
 	ASA_M128_set();

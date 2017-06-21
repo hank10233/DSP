@@ -37,7 +37,7 @@ HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
 ## Objects that must be built in order to link
-OBJECTS = 005.o ASA_DIO.o 
+OBJECTS = 005.o ASA_DIO.o ASA_TWI.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = "C:\Users\hank10233\Documents\AVRStudio\sp4\LLL\ASA_Lib.o" 
@@ -50,6 +50,9 @@ all: $(TARGET) 005.hex 005.eep 005.lss size
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ASA_DIO.o: ../../LLL/ASA_DIO.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+ASA_TWI.o: ../../LLL/ASA_TWI.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link

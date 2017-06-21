@@ -1,12 +1,11 @@
-#include "SPI_slave.h"
+#include "..\LLL\TW_slave.h"
 
-//設置此裝置為slave
-void slave_ini(){
-    DDRB=(0<<DD_SCK)|(0<<DD_MOSI)|(0<<DD_SS)|(1<<DD_MISO);
-	SPCR=(1<<SPE)|(0<<MSTR)|(1<<SPIE);
+//設置此裝置為slave 致能TWI中斷
+void slave_TWI_ini(){
+    
 }
-//SPI通訊處理器初始函式
-void slave_SPI_swap_ini(TypeOfslave_SPI_swap* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p){
+//TWI通訊處理器初始函式
+void slave_TWI_swap_ini(TypeOfslave_TWI_swap* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p){
 	str_p->status=receiving;
 	str_p->InBUFF_p=InBuff_p;
 	str_p->OutBUFF_p=OutBuff_p;
@@ -17,17 +16,17 @@ void slave_SPI_swap_ini(TypeOfslave_SPI_swap* str_p,TypeOfBuffer* OutBuff_p,Type
 }
 
 //通訊封包處理及回應產生器初始函式
-void slave_SPI_PacDe_ini(TypeOfslave_SPI_PacDe* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p){
+void slave_TWI_PacDe_ini(TypeOfslave_TWI_PacDe* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p){
 	str_p->status=STATUS_HEADER;
 	str_p->Data_p = NULL;
 	str_p->OutBUFF_p=OutBuff_p;
 	str_p->InBUFF_p=InBuff_p;
 }
 
-//SPI通訊處理器執行函式
+//TWI通訊處理器執行函式
 //置於中斷中執行
-void slave_SPI_swap_step(void){
-	TypeOfslave_SPI_swap* str_p=&slave_SPI_swap_str;
+void slave_TWI_swap_step(void){
+	TypeOfslave_TWI_swap* str_p=&slave_TWI_swap_str;
 	if((str_p->InBUFF_p->PUTindex+1)%MAXBUFFBYTES != str_p->InBUFF_p->GETindex){ // avoid data crush
 		str_p-> InBUFF_p->data[ str_p->InBUFF_p->PUTindex ] = SPDR;
 		str_p-> InBUFF_p->PUTindex = (str_p->InBUFF_p->PUTindex+1)%MAXBUFFBYTES;
@@ -38,9 +37,9 @@ void slave_SPI_swap_step(void){
 	}
 }
 
-//SPI通訊處理器狀態切換函式
+//TWI通訊處理器狀態切換函式
 //未使用
-char slave_SPI_swap_ss(TypeOfslave_SPI_swap* str_p){
+char slave_TWI_swap_ss(TypeOfslave_TWI_swap* str_p){
 	char res=0;
 	switch(str_p->status){
 		case receiving:
@@ -57,7 +56,7 @@ char slave_SPI_swap_ss(TypeOfslave_SPI_swap* str_p){
 
 //通訊封包解包執行函式
 //置於main while(1)中執行
-char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
+char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 	static char BytesCount = 0;
 	static char check_sum = 0;
 	char result =0;
@@ -78,14 +77,14 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			break;
 		case STATUS_CALLTYPE :
-			str_p->CallType = str_p->InBUFF_p->data[str_p->InBUFF_p->GETindex];
+			str_p->CallType = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
 			//printf("CallType  %d\n", str_p->CallType);
 			check_sum = check_sum+str_p->CallType;
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			str_p->status = STATUS_LSBYTE;
 			break;
 		case STATUS_LSBYTE:
-			str_p->LSByte = str_p->InBUFF_p->data[str_p->InBUFF_p->GETindex];
+			str_p->LSByte = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
 			//printf("LSByte  %d\n", str_p->LSByte);
 			check_sum = check_sum+str_p->LSByte;
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
@@ -102,7 +101,7 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 			}
 			break;
 		case STATUS_BYTES:
-			str_p->Bytes = str_p->InBUFF_p->data[str_p->InBUFF_p->GETindex];
+			str_p->Bytes = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
 			//printf("Bytes  %d\n", str_p->Bytes);
 			check_sum = check_sum+str_p->Bytes;
 
@@ -119,14 +118,14 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 			}
 			break;
 		case STATUS_MASK:
-			str_p->Mask = str_p->InBUFF_p->data[str_p->InBUFF_p->GETindex];
+			str_p->Mask = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
 			//printf("Mask  %d\n", str_p->Mask);
 			check_sum = check_sum+str_p->Mask;
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			str_p->status =STATUS_SHIFT;
 			break;
 		case STATUS_SHIFT:
-			str_p->Shift = str_p->InBUFF_p->data[str_p->InBUFF_p->GETindex];
+			str_p->Shift = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
 			//printf("Shift  %d\n", str_p->Shift);
 			check_sum = check_sum+str_p->Shift;
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
@@ -141,7 +140,7 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 			}
 			break;
 		case STATUS_DATA:
-			datemp=str_p->InBUFF_p->data[str_p->InBUFF_p->GETindex];
+			datemp=str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
 			*((char*)str_p->Data_p + BytesCount) = datemp-BytesCount;
 			datemp=*((char*)str_p->Data_p + BytesCount);
 			check_sum = check_sum+datemp+BytesCount;
@@ -155,7 +154,7 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 			else {str_p->status = STATUS_CHECKSUM;}
 			break;
 		case STATUS_CHECKSUM:
-			str_p->CheckSum = str_p->InBUFF_p->data[str_p->InBUFF_p->GETindex];
+			str_p->CheckSum = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			if(check_sum == str_p->CheckSum){
 				switch(str_p->CallType){
@@ -181,42 +180,42 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 			else{ //check_sum error
 			 	result = 1;
 			}
-			str_p->OutBUFF_p->data[str_p->OutBUFF_p->PUTindex] = REHEADER;
+			str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = REHEADER;
 			str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
-			str_p->OutBUFF_p->data[str_p->OutBUFF_p->PUTindex] = result;
+			str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = result;
 			str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 			rcheck_sum=rcheck_sum+result;
 			switch(str_p->CallType){
 					case CALL_TYPE_SET:
-						str_p->OutBUFF_p->data[str_p->OutBUFF_p->PUTindex] = rcheck_sum;
+						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
 						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 						break;
 					case CALL_TYPE_PUT:
-						str_p->OutBUFF_p->data[str_p->OutBUFF_p->PUTindex] = rcheck_sum;
+						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
 						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 						break;
 					case CALL_TYPE_GET:
 						if(result == 0){
 							for(BytesCount = 0 ; BytesCount < str_p->Bytes ; BytesCount++){
-								str_p->OutBUFF_p->data[str_p->OutBUFF_p->PUTindex] = *((char*)str_p->Data_p+BytesCount)+BytesCount;
+								str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = *((char*)str_p->Data_p+BytesCount)+BytesCount;
 								str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 								rcheck_sum = rcheck_sum+*((char*)str_p->Data_p+BytesCount)+BytesCount;
 							}
 						}
-						str_p->OutBUFF_p->data[str_p->OutBUFF_p->PUTindex] = rcheck_sum;
+						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
 						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 						break;
 					case CALL_TYPE_FPT:
-						str_p->OutBUFF_p->data[str_p->OutBUFF_p->PUTindex] = rcheck_sum;
+						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
 						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 						break;
 					case CALL_TYPE_FGT:
 						if(result == 0){
-							str_p->OutBUFF_p->data[str_p->OutBUFF_p->PUTindex] = *((char*)str_p->Data_p+BytesCount);
+							str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = *((char*)str_p->Data_p+BytesCount);
 							str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 							rcheck_sum = rcheck_sum+*((char*)str_p->Data_p+BytesCount);
 						}
-						str_p->OutBUFF_p->data[str_p->OutBUFF_p->PUTindex] = rcheck_sum;
+						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
 						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 						break;
 			}

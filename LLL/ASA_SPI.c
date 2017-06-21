@@ -1,5 +1,13 @@
 #include "ASA_SPI.h"
 #include <stdio.h>
+
+void Master_ini(){
+	//set CS as output
+    DDRF=(1<<PF4);
+    DDRB=(1<<DD_SCK)|(1<<DD_MOSI)|(1<<DD_SS)|(0<<DD_MISO);
+	SPCR=(1<<SPE)|(1<<MSTR);
+}
+
 char M128_SPI_swap(char Data){
 	M128_DIO_fpt(CS_PORT_NUM, CS_PORT_MSK, CS_PORT_SHT,1);
 	SPDR = Data;
