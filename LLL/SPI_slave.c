@@ -128,6 +128,7 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 			str_p->Mask = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
 			//printf("Mask  %d\n", str_p->Mask);
 			check_sum = check_sum+str_p->Mask;
+			str_p->Data_p = realloc(str_p->Data_p, 1*sizeof(char));
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			str_p->status =STATUS_SHIFT;
 			break;

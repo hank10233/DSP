@@ -1,15 +1,12 @@
-#ifndef __TWI_slave_H__
-#define __TWI_slave_H__
-
 #include "..\LLL\ASA_Lib.h"
 #include "..\LLL\ASA_general.h"
+#include "..\LLL\bit_operator.h"
 #include <stdlib.h>
 
+#define twi_slave_address 0b10110000
 #define MAXBUFFBYTES 32
 #define HEADER 0x77
 #define REHEADER 0x79
-#define receiving 0
-#define transmitting 1
 #define CALL_TYPE_SET 0
 #define CALL_TYPE_PUT 1
 #define CALL_TYPE_GET 2
@@ -23,6 +20,21 @@
 #define STATUS_SHIFT 5
 #define STATUS_DATA 6
 #define STATUS_CHECKSUM 7
+//Status codes for TWI
+#define TW_BUS_ERROR 0x00
+#define TW_BUS_INI 0xf8
+// Status codes for slave transmitter mode
+#define TWI_ST_SLA_ACK		0xA8
+#define TWI_ST_DATA_ACK		0xB8
+#define TWI_ST_DATA_NACK	0xC0
+#define TWI_ST_LAST_DATA	0xC8
+// Status codes for slave receiver mode
+#define TWI_SR_SLA_ACK		0x60
+#define TWI_SR_DATA_ACK		0x80
+#define TWI_SR_DATA_NACK	0x88
+#define TWI_SR_STOP			0xA0
+
+#define TW_STATUS (TWSR & 0xf8)
 
 //緩衝區資料結構型態
 typedef struct {
@@ -31,7 +43,7 @@ char GETindex;
 char data[MAXBUFFBYTES];
 } TypeOfBuffer;
 
-//SPI通訊處理用資料結構
+//TWI通訊處理用資料結構
 typedef struct {
 char status;
 TypeOfBuffer* InBUFF_p;
@@ -60,11 +72,15 @@ TypeOfslave_TWI_swap slave_TWI_swap_str;
 TypeOfslave_TWI_PacDe slave_TWI_PacDe_str;
 
 
-void slave_TWI_ini();
-void slave_TWI_swap_ini(TypeOfslave_SPI_swap* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
-void slave_TWI_PacDe_ini(TypeOfslave_SPI_PacDe* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
+void slave_TWI_ini(void);
+void slave_TWI_swap_ini(TypeOfslave_TWI_swap* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
+void slave_TWI_PacDe_ini(TypeOfslave_TWI_PacDe* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
 void slave_TWI_swap_step(void);
-//char slave_SPI_swap_ss(TypeOfslave_SPI_swap* str_p);   未使用
-char slave_TWI_PacDe_step(TypeOfslave_SPI_PacDe* str_p);
+char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p);
 
-#endif
+char slave_set(char LSByte,char Mask,char Shift,char Data);
+char slave_put(char LSByte,char Bytes , void*  Data_p);
+char slave_get(char LSByte,char Bytes,void*  Data_p);
+char slave_fpt(char LSByte,char Mask,char Shift,char Data);
+char slave_fgt(char LSByte,char Mask,char Shift,char *Data);
+

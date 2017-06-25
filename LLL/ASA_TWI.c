@@ -1,5 +1,10 @@
 #include "..\LLL\ASA_TWI.h"
 
+void M128_TWI_ini(void){
+	// note: TWBR of master should not less than 10
+	M128_TWI_set(200, 0xff , 0 ,0x10);
+}
+
 char M128_TWI_set( char LSByte, char Mask,  char shift,  char Data){
 	if (LSByte<200 || LSByte>203) return 1;
 	if (Mask<0 || Mask>255) return 1;
@@ -154,19 +159,20 @@ char M128_TWI_trm(char OneReg, char SLA, char RegAdd, char Bytes, void *Data_p){
 	//start
 	check=TWI_movement_Start();
 	if(check!=0) return 1;
-printf("start check\n");
+
 	//sent SLA_W
 	M128_TWI_put(0,1,(char*)&SLA_W);
 	check=TWI_movement_MSLA_W();
 	if(check!=0) return 2;
-printf("sla check in\n");
 
 	if(OneReg==1){
 		for(int i=0 ; i<Bytes ; i++){
 			//sent data
 			M128_TWI_put(0,1,Data_p+i);
 			check=TWI_movement_MDataTransmit();
-			if(check!=0) return 4;
+			if(check!=0){
+				return 4;
+			}
 		}
 		TWI_movement_Stop();
 		return 0;
@@ -243,4 +249,379 @@ char M128_TWI_rec(char OneReg, char SLA, char RegAdd, char Bytes, void *Data_p){
 		TWI_movement_Stop();
 		return 0;
 	}
+}
+
+
+char M128_TWI_rec_forasa( char SLA, char Bytes, char* result, char* check_sum, void *Data_p){
+	unsigned int SLA_R = SLA | 0X01;
+	char check;
+	char gdata;
+	char* gdata_p=&gdata;
+	char forRe=0;
+	//start
+	check=TWI_movement_Restart();
+	if(check!=0) return 1;
+	//sent SLA_R
+	M128_TWI_put(0,1,(char*)&SLA_R);
+	check=TWI_movement_MSLA_R();
+	if(check!=0) return 5;
+	//receive reheader
+	while(forRe!=REHEADER){
+		check=TWI_movement_MDataReceive_nLast();
+		if(check!=0) return 6;
+		M128_TWI_get( 0, 1, &forRe);
+	}
+	//_delay_ms(1);
+	//Receive result
+	check=TWI_movement_MDataReceive_nLast();
+	if(check!=0) return 6;
+	M128_TWI_get( 0, 1, result);
+	//printf("%d\n",*(result) );
+	//_delay_ms(1);
+
+	if(*(result) == 0){
+		//Receive data
+		for(int i=0 ; i<Bytes ; ++i){
+			check=TWI_movement_MDataReceive_nLast();
+			if(check!=0) return 6;
+			M128_TWI_get( 0, 1, gdata_p);
+			//printf("%d\n",*gdata_p );
+			*((char*)Data_p+i)=gdata-i;
+			//_delay_ms(1);
+		}
+	}
+
+	//Receive check_sum
+	check=TWI_movement_MDataReceive_Last();
+	if(check!=0) return 6;
+	M128_TWI_get( 0, 1, check_sum);
+	//printf("%d\n",*(check_sum) );
+	TWI_movement_Stop();
+	return 0;
+}
+
+char ASA_TWI_set(char ASAID, char SLA, char LSBbyte, char Mask, char Shift, char Data){
+	char check_sum=0;
+	char gcheck_sum=0;
+	char check=0;
+	unsigned int SLA_W = SLA & 0XFE;
+	char putdata;
+	char* putdata_p=&putdata;
+	char result;
+	M128_ASAID_SET(ASAID);
+
+	check=TWI_movement_Start();
+	if(check!=0) return 4;
+
+	//sent SLA_W
+	M128_TWI_put(0,1,(char*)&SLA_W);
+	check=TWI_movement_MSLA_W();
+	if(check!=0) return 5;
+
+	putdata=HEADER;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=CALL_TYPE_SET;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=LSBbyte;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Mask;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Shift;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Data;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=check_sum;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	check_sum=0;
+	check=M128_TWI_rec_forasa( SLA, 0, &result, &gcheck_sum, NULL);
+	if(check!=0) return 7;
+	check_sum=check_sum+result;
+	if(check_sum!=gcheck_sum){
+		return 2+result;//check_sum inequal
+	}
+	return 0+result;
+}
+
+char ASA_TWI_put(char ASAID, char SLA,char LSBbyte,char Bytes,void* Data_p){
+	char check_sum=0;
+	char gcheck_sum=0;
+	unsigned int SLA_W = SLA & 0XFE;
+	char check=0;
+	char putdata;
+	char* putdata_p=&putdata;
+	char result;
+	M128_ASAID_SET(ASAID);
+	check=TWI_movement_Start();
+	if(check!=0) return 4;
+
+	//sent SLA_W
+	M128_TWI_put(0,1,(char*)&SLA_W);
+	check=TWI_movement_MSLA_W();
+	if(check!=0) return 5;
+
+	putdata=HEADER;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=CALL_TYPE_PUT;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=LSBbyte;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Bytes;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	for (int i=0; i < Bytes; ++i){
+		putdata=*((char*)Data_p+i)+(char)i;
+		check_sum=check_sum+putdata;
+		M128_TWI_put(0,1,putdata_p);
+		check=TWI_movement_MDataTransmit();
+		if(check!=0)return 6;
+	}
+
+	putdata=check_sum;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	check_sum=0;
+	check=M128_TWI_rec_forasa( SLA, 0, &result, &gcheck_sum, NULL);
+	if(check!=0) return 5;
+	check_sum=check_sum+result;
+	if(check_sum!=gcheck_sum){
+		return 2+result;//check_sum inequal
+	}
+	return 0+result;
+}
+
+char ASA_TWI_get(char ASAID, char SLA, char LSBbyte, char Bytes,void* Data_p){
+	char check_sum=0;
+	char gcheck_sum=0;
+	unsigned int SLA_W = SLA & 0XFE;
+	char check=0;
+	char putdata;
+	char* putdata_p=&putdata;
+	char result;
+	M128_ASAID_SET(ASAID);
+	check=TWI_movement_Start();
+	if(check!=0) return 4;
+
+	//sent SLA_W
+	M128_TWI_put(0,1,(char*)&SLA_W);
+	check=TWI_movement_MSLA_W();
+	if(check!=0) return 5;
+
+	putdata=HEADER;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=CALL_TYPE_GET;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=LSBbyte;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Bytes;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=check_sum;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	check_sum=0;
+	check=M128_TWI_rec_forasa( SLA, Bytes, &result, &gcheck_sum, Data_p);
+	if(check!=0) return 5;
+	check_sum=check_sum+result;
+	if(result==0){
+		for (int i = 0; i < Bytes; ++i){
+			check_sum=check_sum+*((char*)Data_p+i)+i;
+		}
+	}
+	if(check_sum!=gcheck_sum){
+		return 2+result;//check_sum inequal
+	}
+	return 0+result;
+}
+
+char ASA_TWI_fpt(char ASAID, char SLA, char LSBbyte, char Mask,char Shift,char Data){
+	char check_sum=0;
+	char gcheck_sum=0;
+	char check=0;
+	unsigned int SLA_W = SLA & 0XFE;
+	char putdata;
+	char* putdata_p=&putdata;
+	char result;
+	M128_ASAID_SET(ASAID);
+
+	check=TWI_movement_Start();
+	if(check!=0) return 4;
+
+	//sent SLA_W
+	M128_TWI_put(0,1,(char*)&SLA_W);
+	check=TWI_movement_MSLA_W();
+	if(check!=0) return 5;
+
+	putdata=HEADER;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=CALL_TYPE_FPT;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=LSBbyte;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Mask;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Shift;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Data;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=check_sum;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	check_sum=0;
+	check=M128_TWI_rec_forasa( SLA, 0, &result, &gcheck_sum, NULL);
+	if(check!=0) return 7;
+	check_sum=check_sum+result;
+	if(check_sum!=gcheck_sum){
+		return 2+result;//check_sum inequal
+	}
+	return 0+result;
+}
+
+char ASA_TWI_fgt(char ASAID, char SLA, char LSBbyte, char Mask,char Shift,char* Data_p){
+	char check_sum=0;
+	char gcheck_sum=0;
+	char check=0;
+	unsigned int SLA_W = SLA & 0XFE;
+	char putdata;
+	char* putdata_p=&putdata;
+	char result;
+
+	M128_ASAID_SET(ASAID);
+
+	check=TWI_movement_Start();
+	if(check!=0) return 4;
+
+	//sent SLA_W
+	M128_TWI_put(0,1,(char*)&SLA_W);
+	check=TWI_movement_MSLA_W();
+	if(check!=0) return 5;
+
+	putdata=HEADER;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=CALL_TYPE_FGT;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=LSBbyte;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Mask;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=Shift;
+	check_sum=check_sum+putdata;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	putdata=check_sum;
+	M128_TWI_put(0,1,putdata_p);
+	check=TWI_movement_MDataTransmit();
+	if(check!=0)return 6;
+
+	check_sum=0;
+	check=M128_TWI_rec_forasa( SLA, 1, &result, &gcheck_sum, Data_p);
+	if(check!=0)return 5;
+
+	if(result==0){
+		check_sum=check_sum+*((char*)Data_p);
+	}
+
+	if(check_sum!=gcheck_sum){
+		return 2+result;//check_sum inequal
+	}
+	return 0+result;
 }

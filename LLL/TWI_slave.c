@@ -1,12 +1,19 @@
-#include "..\LLL\TW_slave.h"
+#include "..\LLL\TWI_slave.h"
+
+//測試用slave被代CALL函式----------------------------------------------------
+char TestData[2];
+
+
 
 //設置此裝置為slave 致能TWI中斷
 void slave_TWI_ini(){
-    
+    // in slave mode, don't need to set TWBR or TWPS, but the CPU Clock frequency should greater than SCL 16 times
+   TWCR=(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+    TWAR=twi_slave_address;
+    sei();
 }
 //TWI通訊處理器初始函式
 void slave_TWI_swap_ini(TypeOfslave_TWI_swap* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p){
-	str_p->status=receiving;
 	str_p->InBUFF_p=InBuff_p;
 	str_p->OutBUFF_p=OutBuff_p;
 	str_p->InBUFF_p->PUTindex=0;
@@ -27,31 +34,40 @@ void slave_TWI_PacDe_ini(TypeOfslave_TWI_PacDe* str_p,TypeOfBuffer* OutBuff_p,Ty
 //置於中斷中執行
 void slave_TWI_swap_step(void){
 	TypeOfslave_TWI_swap* str_p=&slave_TWI_swap_str;
-	if((str_p->InBUFF_p->PUTindex+1)%MAXBUFFBYTES != str_p->InBUFF_p->GETindex){ // avoid data crush
-		str_p-> InBUFF_p->data[ str_p->InBUFF_p->PUTindex ] = SPDR;
-		str_p-> InBUFF_p->PUTindex = (str_p->InBUFF_p->PUTindex+1)%MAXBUFFBYTES;
-	}
-	if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex){
-		SPDR = str_p->OutBUFF_p->data[ str_p->OutBUFF_p->GETindex ];
-		str_p->OutBUFF_p-> GETindex = (str_p->OutBUFF_p->GETindex+1)%MAXBUFFBYTES;
-	}
-}
-
-//TWI通訊處理器狀態切換函式
-//未使用
-char slave_TWI_swap_ss(TypeOfslave_TWI_swap* str_p){
-	char res=0;
-	switch(str_p->status){
-		case receiving:
-			str_p->status= transmitting;
-			res=0;
+	switch(TW_STATUS){
+		case TW_BUS_INI:
 			break;
-		case transmitting:
-			str_p->status= receiving;
-			res=1;
-			break; //1 for error message
+		case TWI_SR_SLA_ACK:
+			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+			break;
+		case TWI_SR_DATA_ACK:
+			if((str_p->InBUFF_p->PUTindex+1)%MAXBUFFBYTES != str_p->InBUFF_p->GETindex){  // avoid data crush
+				str_p-> InBUFF_p->data[ (int)(str_p->InBUFF_p->PUTindex) ] = TWDR;
+				str_p-> InBUFF_p->PUTindex = (str_p->InBUFF_p->PUTindex+1)%MAXBUFFBYTES;
+			}
+			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+			break;
+		case TWI_SR_STOP:
+			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+			break;
+		case TWI_ST_SLA_ACK:
+			if(str_p->OutBUFF_p->GETindex == str_p->OutBUFF_p->PUTindex){
+				TWDR = str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->GETindex)];
+				str_p->OutBUFF_p-> GETindex = (str_p->OutBUFF_p->GETindex+1)%MAXBUFFBYTES;
+			}
+			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+			break;
+		case TWI_ST_DATA_ACK:
+			if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex){
+				TWDR = str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->GETindex)];
+				str_p->OutBUFF_p-> GETindex = (str_p->OutBUFF_p->GETindex+1)%MAXBUFFBYTES;
+			 }
+			 TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+		case TWI_ST_DATA_NACK:
+			 TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+			break;
+
 	}
-	return res;
 }
 
 //通訊封包解包執行函式
@@ -62,7 +78,6 @@ char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 	char result =0;
 	char rcheck_sum = 0;
 	char datemp=0;
-
 	if(str_p->InBUFF_p->PUTindex == str_p->InBUFF_p->GETindex ) return 0;
 	//輸入緩衝寫入指標等於讀出指標時不執行
 	switch(str_p->status){
@@ -70,22 +85,19 @@ char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 			BytesCount=0;
 			check_sum=0;
 			result=0;
-			if(str_p->InBUFF_p->data[ str_p->InBUFF_p->GETindex ] == HEADER){
+			if(str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)] == HEADER){
 				str_p->status = STATUS_CALLTYPE;
-				//printf("get header\n");
 			}
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			break;
 		case STATUS_CALLTYPE :
 			str_p->CallType = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
-			//printf("CallType  %d\n", str_p->CallType);
 			check_sum = check_sum+str_p->CallType;
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			str_p->status = STATUS_LSBYTE;
 			break;
 		case STATUS_LSBYTE:
 			str_p->LSByte = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
-			//printf("LSByte  %d\n", str_p->LSByte);
 			check_sum = check_sum+str_p->LSByte;
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			switch(str_p->CallType){
@@ -102,11 +114,8 @@ char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 			break;
 		case STATUS_BYTES:
 			str_p->Bytes = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
-			//printf("Bytes  %d\n", str_p->Bytes);
 			check_sum = check_sum+str_p->Bytes;
-
 			str_p->Data_p = realloc(str_p->Data_p, str_p->Bytes*sizeof(char));
-
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			switch(str_p->CallType){
 				case CALL_TYPE_PUT:
@@ -119,14 +128,13 @@ char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 			break;
 		case STATUS_MASK:
 			str_p->Mask = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
-			//printf("Mask  %d\n", str_p->Mask);
 			check_sum = check_sum+str_p->Mask;
+			str_p->Data_p = realloc(str_p->Data_p, 1*sizeof(char));
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			str_p->status =STATUS_SHIFT;
 			break;
 		case STATUS_SHIFT:
 			str_p->Shift = str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
-			//printf("Shift  %d\n", str_p->Shift);
 			check_sum = check_sum+str_p->Shift;
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			switch(str_p->CallType){
@@ -141,9 +149,8 @@ char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 			break;
 		case STATUS_DATA:
 			datemp=str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)];
+			check_sum = check_sum+datemp;
 			*((char*)str_p->Data_p + BytesCount) = datemp-BytesCount;
-			datemp=*((char*)str_p->Data_p + BytesCount);
-			check_sum = check_sum+datemp+BytesCount;
 			str_p->InBUFF_p->GETindex = (str_p->InBUFF_p->GETindex + 1)%MAXBUFFBYTES;
 			if(str_p->CallType == CALL_TYPE_PUT ){
 				BytesCount = BytesCount+1;
@@ -227,7 +234,6 @@ char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 }
 
 //測試用slave被代CALL函式----------------------------------------------------
-char TestData[2];
 char slave_set(char LSByte,char Mask,char Shift,char Data){
 	if ( LSByte < 200 || LSByte > 201 ) { return 1; }
 	switch(LSByte){

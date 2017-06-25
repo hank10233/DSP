@@ -57,7 +57,7 @@ TypeOfBuffer Res_Buff_str;
 TypeOfslave_SPI_swap slave_SPI_swap_str;
 TypeOfslave_SPI_PacDe slave_SPI_PacDe_str;
 
-void slave_SPI_ini();
+void slave_SPI_ini(void);
 void slave_SPI_swap_ini(TypeOfslave_SPI_swap* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
 void slave_SPI_PacDe_ini(TypeOfslave_SPI_PacDe* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
 void slave_SPI_swap_step(void);

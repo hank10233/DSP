@@ -1,11 +1,11 @@
 ###############################################################################
-# Makefile for the project 005
+# Makefile for the project 005_master_test
 ###############################################################################
 
 ## General Flags
-PROJECT = 005
+PROJECT = 005_master_test
 MCU = atmega128
-TARGET = 005.elf
+TARGET = 005_master_test.elf
 CC = avr-gcc
 
 CPP = avr-g++
@@ -25,7 +25,7 @@ ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
 
 ## Linker flags
 LDFLAGS = $(COMMON)
-LDFLAGS +=  -Wl,-Map=005.map
+LDFLAGS +=  -Wl,-Map=005_master_test.map
 
 
 ## Intel Hex file production flags
@@ -37,22 +37,22 @@ HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
 ## Objects that must be built in order to link
-OBJECTS = 005.o ASA_DIO.o ASA_TWI.o 
+OBJECTS = 005_master_test.o ASA_TWI.o ASA_DIO.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = "C:\Users\hank10233\Documents\AVRStudio\sp4\LLL\ASA_Lib.o" 
 
 ## Build
-all: $(TARGET) 005.hex 005.eep 005.lss size
+all: $(TARGET) 005_master_test.hex 005_master_test.eep 005_master_test.lss size
 
 ## Compile
-005.o: ../005.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
-
-ASA_DIO.o: ../../LLL/ASA_DIO.c
+005_master_test.o: ../005_master_test.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ASA_TWI.o: ../../LLL/ASA_TWI.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+ASA_DIO.o: ../../LLL/ASA_DIO.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link
@@ -75,7 +75,7 @@ size: ${TARGET}
 ## Clean target
 .PHONY: clean
 clean:
-	-rm -rf $(OBJECTS) 005.elf dep/* 005.hex 005.eep 005.lss 005.map
+	-rm -rf $(OBJECTS) 005_master_test.elf dep/* 005_master_test.hex 005_master_test.eep 005_master_test.lss 005_master_test.map
 
 
 ## Other dependencies
