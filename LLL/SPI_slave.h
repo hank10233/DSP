@@ -61,5 +61,5 @@ void slave_SPI_ini(void);
 void slave_SPI_swap_ini(TypeOfslave_SPI_swap* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
 void slave_SPI_PacDe_ini(TypeOfslave_SPI_PacDe* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
 void slave_SPI_swap_step(void);
-//char slave_SPI_swap_ss(TypeOfslave_SPI_swap* str_p);   未使用
+void slave_SPI_swap_ss(TypeOfslave_SPI_swap* str_p);
 char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p);

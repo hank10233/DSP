@@ -7,6 +7,8 @@
 #define MAXBUFFBYTES 32
 #define HEADER 0x77
 #define REHEADER 0x79
+#define receiving 0
+#define transmitting 1
 #define CALL_TYPE_SET 0
 #define CALL_TYPE_PUT 1
 #define CALL_TYPE_GET 2
@@ -77,6 +79,7 @@ void slave_TWI_swap_ini(TypeOfslave_TWI_swap* str_p,TypeOfBuffer* OutBuff_p,Type
 void slave_TWI_PacDe_ini(TypeOfslave_TWI_PacDe* str_p,TypeOfBuffer* OutBuff_p,TypeOfBuffer* InBuff_p);
 void slave_TWI_swap_step(void);
 char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p);
+void slave_TWI_swap_ss(TypeOfslave_TWI_swap* str_p);
 
 char slave_set(char LSByte,char Mask,char Shift,char Data);
 char slave_put(char LSByte,char Bytes , void*  Data_p);

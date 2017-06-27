@@ -8,8 +8,8 @@ char TestData[2];
 //設置此裝置為slave 致能TWI中斷
 void slave_TWI_ini(){
     // in slave mode, don't need to set TWBR or TWPS, but the CPU Clock frequency should greater than SCL 16 times
-   TWCR=(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
-    TWAR=twi_slave_address;
+	TWCR=(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+	TWAR=twi_slave_address;
     sei();
 }
 //TWI通訊處理器初始函式
@@ -29,7 +29,15 @@ void slave_TWI_PacDe_ini(TypeOfslave_TWI_PacDe* str_p,TypeOfBuffer* OutBuff_p,Ty
 	str_p->OutBUFF_p=OutBuff_p;
 	str_p->InBUFF_p=InBuff_p;
 }
-
+void slave_TWI_swap_ss(TypeOfslave_TWI_swap* str_p){
+	switch(str_p->status){
+		case receiving:
+			str_p->status= transmitting;
+			break;
+		case transmitting:
+			break;
+	}
+}
 //TWI通訊處理器執行函式
 //置於中斷中執行
 void slave_TWI_swap_step(void){
@@ -38,6 +46,7 @@ void slave_TWI_swap_step(void){
 		case TW_BUS_INI:
 			break;
 		case TWI_SR_SLA_ACK:
+		case TWI_SR_STOP:
 			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
 			break;
 		case TWI_SR_DATA_ACK:
@@ -47,26 +56,24 @@ void slave_TWI_swap_step(void){
 			}
 			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
 			break;
-		case TWI_SR_STOP:
-			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
-			break;
 		case TWI_ST_SLA_ACK:
-			if(str_p->OutBUFF_p->GETindex == str_p->OutBUFF_p->PUTindex){
+			if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex && str_p->status == transmitting){
 				TWDR = str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->GETindex)];
 				str_p->OutBUFF_p-> GETindex = (str_p->OutBUFF_p->GETindex+1)%MAXBUFFBYTES;
 			}
 			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
 			break;
 		case TWI_ST_DATA_ACK:
-			if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex){
+			if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex && str_p->status == transmitting){
 				TWDR = str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->GETindex)];
 				str_p->OutBUFF_p-> GETindex = (str_p->OutBUFF_p->GETindex+1)%MAXBUFFBYTES;
-			 }
-			 TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
-		case TWI_ST_DATA_NACK:
-			 TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+			}
+			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
 			break;
-
+		case TWI_ST_DATA_NACK:
+			str_p->status=receiving;
+			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
+			break;
 	}
 }
 
@@ -193,40 +200,31 @@ char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 			str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 			rcheck_sum=rcheck_sum+result;
 			switch(str_p->CallType){
-					case CALL_TYPE_SET:
-						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
-						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
-						break;
-					case CALL_TYPE_PUT:
-						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
-						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
-						break;
-					case CALL_TYPE_GET:
-						if(result == 0){
-							for(BytesCount = 0 ; BytesCount < str_p->Bytes ; BytesCount++){
-								str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = *((char*)str_p->Data_p+BytesCount)+BytesCount;
-								str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
-								rcheck_sum = rcheck_sum+*((char*)str_p->Data_p+BytesCount)+BytesCount;
-							}
-						}
-						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
-						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
-						break;
-					case CALL_TYPE_FPT:
-						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
-						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
-						break;
-					case CALL_TYPE_FGT:
-						if(result == 0){
-							str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = *((char*)str_p->Data_p+BytesCount);
+				case CALL_TYPE_SET:
+				case CALL_TYPE_PUT:
+				case CALL_TYPE_FPT:
+					break;
+				case CALL_TYPE_GET:
+					if(result == 0){
+						for(BytesCount = 0 ; BytesCount < str_p->Bytes ; BytesCount++){
+							str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = *((char*)str_p->Data_p+BytesCount)+BytesCount;
 							str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
-							rcheck_sum = rcheck_sum+*((char*)str_p->Data_p+BytesCount);
+							rcheck_sum = rcheck_sum+*((char*)str_p->Data_p+BytesCount)+BytesCount;
 						}
-						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
+					}
+					break;
+				case CALL_TYPE_FGT:
+					if(result == 0){
+						str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = *((char*)str_p->Data_p+BytesCount);
 						str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
-						break;
+						rcheck_sum = rcheck_sum+*((char*)str_p->Data_p+BytesCount);
+					}
+					break;
 			}
+			str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
+			str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
 			rcheck_sum=0;
+			slave_TWI_swap_ss(&slave_TWI_swap_str);
 			str_p->status = STATUS_HEADER;
 			break;
 	}

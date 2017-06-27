@@ -3,6 +3,7 @@
 void M128_TWI_ini(void){
 	// note: TWBR of master should not less than 10
 	M128_TWI_set(200, 0xff , 0 ,0x10);
+	M128_TWI_set(202, (1<<TWEN), TWEN, 1);
 }
 
 char M128_TWI_set( char LSByte, char Mask,  char shift,  char Data){
@@ -59,12 +60,12 @@ char M128_TWI_fgt( char LSByte, char Mask,  char shift,  char* Data_p){
 
 void TWI_movement_Stop(void){
 	//stop & clear TWSTA
-	M128_TWI_fpt(202 , (1 << TWINT)|(1 << TWEN)|(1 << TWSTO)|(1<<TWSTA) , 0 , (1 << TWINT)|(1 << TWEN)|(1 << TWSTO));
+	M128_TWI_fpt(202 , (1 << TWINT)|(1 << TWSTO)|(1<<TWSTA) , 0 , (1 << TWINT)|(1 << TWSTO));
 }
 
 char TWI_movement_Start(void){
 	char TWI_status;
-	M128_TWI_fpt(202 , (1<<TWINT)|(1 << TWEN)|(1<<TWSTA) , 0 , (1<<TWINT)|(1 << TWEN)|(1<<TWSTA));
+	M128_TWI_fpt(202 , (1<<TWINT)|(1<<TWSTA) , 0 , (1<<TWINT)|(1<<TWSTA));
 	while( !(bit_check(TWCR,TWINT)) );
 	//get ack, should be TWI_Start
 	M128_TWI_fgt(201 , 0xf8 , 0 , &TWI_status);
@@ -77,7 +78,7 @@ char TWI_movement_Start(void){
 
 char TWI_movement_Restart(void){
 	char TWI_status;
-	M128_TWI_fpt(202 , (1<<TWINT)|(1 << TWEN)|(1<<TWSTA) , 0 , (1<<TWINT)|(1 << TWEN)|(1<<TWSTA));
+	M128_TWI_fpt(202 , (1<<TWINT)|(1<<TWSTA), 0 , (1<<TWINT)|(1<<TWSTA));
 	while( !(bit_check(TWCR,TWINT)) );
 	//get ack, should be TWI_REP_START
 	M128_TWI_fgt(201 , 0xf8 , 0 , &TWI_status);
@@ -90,7 +91,7 @@ char TWI_movement_Restart(void){
 
 char TWI_movement_MSLA_W(void){
 	char TWI_status;
-	M128_TWI_fpt(202 , ((1<<TWINT)|(1 << TWEN)|(1<<TWSTA)) , 0 , ((1<<TWINT)|(1 << TWEN)));
+	M128_TWI_fpt(202 , (1<<TWINT)|(1<<TWSTA), 0, (1<<TWINT));
 	while( !(bit_check(TWCR,TWINT)) );
 	//get ack, should be TWI_MT_SLA_ACK
 	M128_TWI_fgt(201 , 0xf8 , 0 , &TWI_status);
@@ -103,7 +104,7 @@ char TWI_movement_MSLA_W(void){
 
 char TWI_movement_MSLA_R(void){
 	char TWI_status;
-	M128_TWI_fpt(202 , ((1<<TWINT)|(1 << TWEN)|(1<<TWSTA)) , 0 , ((1<<TWINT)|(1 << TWEN)));
+	M128_TWI_fpt(202 , ((1<<TWINT)|(1<<TWSTA)) , 0 , (1<<TWINT));
 	while( !(bit_check(TWCR,TWINT)) );
 	//get ack, should be TWI_MR_SLA_ACK
 	M128_TWI_fgt(201 , 0xf8 , 0 , &TWI_status);
@@ -116,7 +117,7 @@ char TWI_movement_MSLA_R(void){
 
 char TWI_movement_MDataTransmit(void){
 	char TWI_status;
-	M128_TWI_fpt(202 , (1<<TWINT)|(1 << TWEN) , 0 , (1<<TWINT)|(1 << TWEN));
+	M128_TWI_fpt(202 , (1<<TWINT) , 0 , (1<<TWINT));
 	while( !(bit_check(TWCR,TWINT)) );
 	//get ack, should be TWI_MT_DATA_ACK
 	M128_TWI_fgt(201 , 0xf8 , 0 , &TWI_status);
@@ -129,7 +130,7 @@ char TWI_movement_MDataTransmit(void){
 
 char TWI_movement_MDataReceive_nLast(void){
 	char TWI_status;
-	M128_TWI_fpt(202 , (1<<TWINT)|(1<<TWEN)|(1<<TWEA) , 0 , (1<<TWINT)|(1<<TWEN)|(1<<TWEA));
+	M128_TWI_fpt(202 , (1<<TWINT)|(1<<TWEA) , 0 , (1<<TWINT)|(1<<TWEA));
 	while( !(bit_check(TWCR,TWINT)) );
 	//get ack, should be TWI_MR_DATA_ACK
 	M128_TWI_fgt(201 , 0xf8 , 0 , &TWI_status);
@@ -142,7 +143,7 @@ char TWI_movement_MDataReceive_nLast(void){
 
 char TWI_movement_MDataReceive_Last(void){
 	char TWI_status;
-	M128_TWI_fpt(202 , (1<<TWINT)|(1<<TWEN)|(1<<TWEA) , 0 , (1<<TWINT)|(1<<TWEN));
+	M128_TWI_fpt(202 , (1<<TWINT)|(1<<TWEA) , 0 , (1<<TWINT));
 	while( !(bit_check(TWCR,TWINT)) );
 	//get ack, should be TWI_MR_DATA_NACK
 	M128_TWI_fgt(201 , 0xf8 , 0 , &TWI_status);
@@ -165,33 +166,20 @@ char M128_TWI_trm(char OneReg, char SLA, char RegAdd, char Bytes, void *Data_p){
 	check=TWI_movement_MSLA_W();
 	if(check!=0) return 2;
 
-	if(OneReg==1){
-		for(int i=0 ; i<Bytes ; i++){
-			//sent data
-			M128_TWI_put(0,1,Data_p+i);
-			check=TWI_movement_MDataTransmit();
-			if(check!=0){
-				return 4;
-			}
-		}
-		TWI_movement_Stop();
-		return 0;
-	}
-
-	else{
+	if(OneReg!=1){
 		//sent RegAdd
 		M128_TWI_put(0, 1,&RegAdd);
 		check=TWI_movement_MDataTransmit();
 		if(check!=0) return 3;
-		for(int i=0 ; i<Bytes ; i++){
-			//sent data
-			M128_TWI_put(0,1,Data_p+i);
-			check=TWI_movement_MDataTransmit();
-			if(check!=0) return 4;
-		}
-		TWI_movement_Stop();
-		return 0;
 	}
+	for(int i=0 ; i<Bytes ; i++){
+		//sent data
+		M128_TWI_put(0,1,Data_p+i);
+		check=TWI_movement_MDataTransmit();
+		if(check!=0) return 4;
+	}
+	TWI_movement_Stop();
+	return 0;
 }
 char M128_TWI_rec(char OneReg, char SLA, char RegAdd, char Bytes, void *Data_p){
 	unsigned int SLA_W = SLA & 0XFE;
@@ -201,26 +189,7 @@ char M128_TWI_rec(char OneReg, char SLA, char RegAdd, char Bytes, void *Data_p){
 	check=TWI_movement_Start();
 	if(check!=0) return 1;
 
-	if(OneReg==1){
-		//sent SLA_R
-		M128_TWI_put(0,1,(char*)&SLA_R);
-		check=TWI_movement_MSLA_R();
-		if(check!=0) return 5;
-		//Receive data
-		for(int i=0 ; i<Bytes-1 ; i++){
-			check=TWI_movement_MDataReceive_nLast();
-			if(check!=0) return 6;
-			M128_TWI_get( 0, 1, (char*)Data_p+i);
-		}
-		//Receive lastdata
-		check=TWI_movement_MDataReceive_Last();
-		if(check!=0) return 6;
-		M128_TWI_get( 0, 1, (char*)Data_p+Bytes-1);
-		TWI_movement_Stop();
-		return 0;
-	}
-
-	else {
+	if(OneReg!=1){
 		//sent SLA_W
 		M128_TWI_put(0,1,(char*)&SLA_W);
 		check=TWI_movement_MSLA_W();
@@ -232,23 +201,23 @@ char M128_TWI_rec(char OneReg, char SLA, char RegAdd, char Bytes, void *Data_p){
 		//Restart
 		check=TWI_movement_Restart();
 		if(check!=0) return 4;
-		//sent SLA_R
-		M128_TWI_put(0,1,(char*)&SLA_R);
-		check=TWI_movement_MSLA_R();
-		if(check!=0) return 5;
-		//Receive data
-		for(int i=0 ; i<Bytes-1 ; i++){
-			check=TWI_movement_MDataReceive_nLast();
-			if(check!=0) return 6;
-			M128_TWI_get( 0, 1, (char*)Data_p+i);
-		}
-		//Receive lastdata
-		check=TWI_movement_MDataReceive_Last();
-		if(check!=0) return 6;
-		M128_TWI_get( 0, 1, (char*)Data_p+Bytes-1);
-		TWI_movement_Stop();
-		return 0;
 	}
+	//sent SLA_R
+	M128_TWI_put(0,1,(char*)&SLA_R);
+	check=TWI_movement_MSLA_R();
+	if(check!=0) return 5;
+	//Receive data
+	for(int i=0 ; i<Bytes-1 ; i++){
+		check=TWI_movement_MDataReceive_nLast();
+		if(check!=0) return 6;
+		M128_TWI_get( 0, 1, (char*)Data_p+i);
+	}
+	//Receive lastdata
+	check=TWI_movement_MDataReceive_Last();
+	if(check!=0) return 6;
+	M128_TWI_get( 0, 1, (char*)Data_p+Bytes-1);
+	TWI_movement_Stop();
+	return 0;
 }
 
 

@@ -5,6 +5,8 @@
 #include "..\LLL\ASA_DIO.h"
 #include <stdlib.h>
 
+//M128_TWI_trm 後馬上接 M128_TWI_rec會發生問題 原因stop馬上接start可能會太快
+//改善方法 使用restart取代stop+start, 或使用delay
 
 #define HEADER 0x77
 #define REHEADER 0x79

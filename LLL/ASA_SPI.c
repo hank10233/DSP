@@ -198,6 +198,7 @@ char ASA_SPI_get(char ASAID,char LSBbyte,char Bytes,void* Data_p){
 	char* putdata_p=&putdata;
 	char result;
 	char LoadCount=0;
+
 	//putID
 	M128_DIO_fpt(ADDR_PORT_num,ADDR_PORT_msk,ADDR_PORT_sht,ASAID);
 	//put data
@@ -229,18 +230,21 @@ char ASA_SPI_get(char ASAID,char LSBbyte,char Bytes,void* Data_p){
 		}
 		if(LoadCount==1000) { return 4; }//timeout 10s
 	}
+
 	M128_SPI_get(1,0,1,getdata_p);
+	check_sum=check_sum+*getdata_p;
 	result=*getdata_p;
-	check_sum=check_sum+result;
+
 	if(result==0){
 		for (int BytesCount = 0; BytesCount < Bytes; BytesCount++){
 			M128_SPI_get(1,0,1,getdata_p);
-			*((char*)Data_p +BytesCount)=(*getdata_p)-BytesCount;
-			check_sum=check_sum+(*getdata_p);
+			check_sum=check_sum+*getdata_p;
+			*((char*)Data_p +BytesCount)=*getdata_p-BytesCount;
 		}
 	}
+
 	M128_SPI_get(1,0,1,getdata_p);
-	if((*getdata_p)!=check_sum){return 2+result;}
+	if(*(getdata_p)!=check_sum){return 2+result;}
 	return 0+result;
 }
 
@@ -295,7 +299,7 @@ char ASA_SPI_fpt(char ASAID,char LSBbyte,char Mask,char Shift,char Data){
 	result=*getdata_p;
 	check_sum=check_sum+result;
 	M128_SPI_get(1,0,1,getdata_p);
-	if((*getdata_p)!=check_sum){return 2+result;}//check_sum inequal
+	if(*(getdata_p)!=check_sum){return 2+result;}//check_sum inequal
 	return 0+result;
 }
 

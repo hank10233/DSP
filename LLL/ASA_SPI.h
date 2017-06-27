@@ -3,6 +3,16 @@
 
 #include <avr/io.h>
 #include "ASA_DIO.h"
+#include <util\delay.h>
+
+#define HEADER 0x87
+#define REHEADER 0x88
+#define ASA_ID 1
+#define CALL_TYPE_SET 0
+#define CALL_TYPE_PUT 1
+#define CALL_TYPE_GET 2
+#define CALL_TYPE_FPT 3
+#define CALL_TYPE_FGT 4
 
 void Master_ini();
 char M128_SPI_swap(char cData);

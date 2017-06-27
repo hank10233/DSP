@@ -38,28 +38,26 @@ void slave_SPI_swap_step(void){
 		str_p-> InBUFF_p->data[ (int)(str_p->InBUFF_p->PUTindex) ] = SPDR;
 		str_p-> InBUFF_p->PUTindex = (str_p->InBUFF_p->PUTindex+1)%MAXBUFFBYTES;
 	}
-	if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex){
+	if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex && str_p->status == transmitting){
 		SPDR = str_p->OutBUFF_p->data[ (int)(str_p->OutBUFF_p->GETindex) ];
 		str_p->OutBUFF_p-> GETindex = (str_p->OutBUFF_p->GETindex+1)%MAXBUFFBYTES;
+	}
+	if(str_p->OutBUFF_p->GETindex == str_p->OutBUFF_p->PUTindex){
+		str_p->status = receiving;
 	}
 }
 
 //SPI通訊處理器狀態切換函式
-//未使用
-char slave_SPI_swap_ss(TypeOfslave_SPI_swap* str_p){
-	char res=0;
+void slave_SPI_swap_ss(TypeOfslave_SPI_swap* str_p){
 	switch(str_p->status){
 		case receiving:
 			str_p->status= transmitting;
-			res=0;
 			break;
 		case transmitting:
-			str_p->status= receiving;
-			res=1;
-			break; //1 for error message
+			break;
 	}
-	return res;
 }
+
 
 //通訊封包解包執行函式
 //置於main while(1)中執行
@@ -228,6 +226,8 @@ char slave_SPI_PacDe_step(TypeOfslave_SPI_PacDe* str_p){
 						break;
 			}
 			rcheck_sum=0;
+
+			slave_SPI_swap_ss(&slave_SPI_swap_str);
 			str_p->status = STATUS_HEADER;
 			break;
 	}
