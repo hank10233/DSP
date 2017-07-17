@@ -134,7 +134,7 @@ char TWI_movement_MDataReceive_nLast(void){
 	while( !(bit_check(TWCR,TWINT)) );
 	//get ack, should be TWI_MR_DATA_ACK
 	M128_TWI_fgt(201 , 0xf8 , 0 , &TWI_status);
-	if (TWI_status != TWI_MR_DATA_ACK){
+	if (TWI_status != TWI_MR_DATA_ACK){ 
 		TWI_movement_Stop();
 		return TWI_status;
 	}
@@ -160,12 +160,10 @@ char M128_TWI_trm(char OneReg, char SLA, char RegAdd, char Bytes, void *Data_p){
 	//start
 	check=TWI_movement_Start();
 	if(check!=0) return 1;
-
 	//sent SLA_W
 	M128_TWI_put(0,1,(char*)&SLA_W);
 	check=TWI_movement_MSLA_W();
 	if(check!=0) return 2;
-
 	if(OneReg!=1){
 		//sent RegAdd
 		M128_TWI_put(0, 1,&RegAdd);

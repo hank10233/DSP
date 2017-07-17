@@ -1,5 +1,5 @@
-#ifndef __bit_operator_h__
-#define __bit_operator_h__
+#ifndef __BIT_OPERATOR_H__
+#define __BIT_OPERATOR_H__
 
 #define bit(m) (1<<(m))
 //returns an integer with the m'th bit set to 1

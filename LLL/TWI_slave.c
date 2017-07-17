@@ -57,12 +57,6 @@ void slave_TWI_swap_step(void){
 			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
 			break;
 		case TWI_ST_SLA_ACK:
-			if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex && str_p->status == transmitting){
-				TWDR = str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->GETindex)];
-				str_p->OutBUFF_p-> GETindex = (str_p->OutBUFF_p->GETindex+1)%MAXBUFFBYTES;
-			}
-			TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA);
-			break;
 		case TWI_ST_DATA_ACK:
 			if(str_p->OutBUFF_p->GETindex != str_p->OutBUFF_p->PUTindex && str_p->status == transmitting){
 				TWDR = str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->GETindex)];
@@ -92,6 +86,7 @@ char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 			BytesCount=0;
 			check_sum=0;
 			result=0;
+			rcheck_sum=0;
 			if(str_p->InBUFF_p->data[(int)(str_p->InBUFF_p->GETindex)] == HEADER){
 				str_p->status = STATUS_CALLTYPE;
 			}
@@ -223,7 +218,6 @@ char slave_TWI_PacDe_step(TypeOfslave_TWI_PacDe* str_p){
 			}
 			str_p->OutBUFF_p->data[(int)(str_p->OutBUFF_p->PUTindex)] = rcheck_sum;
 			str_p->OutBUFF_p->PUTindex = (str_p->OutBUFF_p->PUTindex + 1)%MAXBUFFBYTES;
-			rcheck_sum=0;
 			slave_TWI_swap_ss(&slave_TWI_swap_str);
 			str_p->status = STATUS_HEADER;
 			break;

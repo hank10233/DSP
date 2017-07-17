@@ -1,11 +1,11 @@
 ###############################################################################
-# Makefile for the project 005_slave_test
+# Makefile for the project 006_slave2
 ###############################################################################
 
 ## General Flags
-PROJECT = 005_slave_test
+PROJECT = 006_slave2
 MCU = atmega128
-TARGET = 005_slave_test.elf
+TARGET = 006_slave2.elf
 CC = avr-gcc
 
 CPP = avr-g++
@@ -25,7 +25,7 @@ ASMFLAGS += -x assembler-with-cpp -Wa,-gdwarf2
 
 ## Linker flags
 LDFLAGS = $(COMMON)
-LDFLAGS +=  -Wl,-Map=005_slave_test.map
+LDFLAGS +=  -Wl,-Map=006_slave2.map
 
 
 ## Intel Hex file production flags
@@ -37,19 +37,22 @@ HEX_EEPROM_FLAGS += --change-section-lma .eeprom=0 --no-change-warnings
 
 
 ## Objects that must be built in order to link
-OBJECTS = 005_slave_test.o TWI_slave.o 
+OBJECTS = 006_slave2.o ASA_USART.o ASA_DIO.o 
 
 ## Objects explicitly added by the user
 LINKONLYOBJECTS = "C:\Users\hank10233\Documents\AVRStudio\sp4\LLL\ASA_Lib.o" 
 
 ## Build
-all: $(TARGET) 005_slave_test.hex 005_slave_test.eep 005_slave_test.lss size
+all: $(TARGET) 006_slave2.hex 006_slave2.eep 006_slave2.lss size
 
 ## Compile
-005_slave_test.o: ../005_slave_test.c
+006_slave2.o: ../006_slave2.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
-TWI_slave.o: ../../LLL/TWI_slave.c
+ASA_USART.o: ../../LLL/ASA_USART.c
+	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
+
+ASA_DIO.o: ../../LLL/ASA_DIO.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c  $<
 
 ##Link
@@ -72,7 +75,7 @@ size: ${TARGET}
 ## Clean target
 .PHONY: clean
 clean:
-	-rm -rf $(OBJECTS) 005_slave_test.elf dep/* 005_slave_test.hex 005_slave_test.eep 005_slave_test.lss 005_slave_test.map
+	-rm -rf $(OBJECTS) 006_slave2.elf dep/* 006_slave2.hex 006_slave2.eep 006_slave2.lss 006_slave2.map
 
 
 ## Other dependencies

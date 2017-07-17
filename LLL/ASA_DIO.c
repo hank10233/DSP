@@ -1,5 +1,14 @@
 #include "ASA_DIO.h"
 
+char M128_ASAID_SET(char ASAID){
+	char check=0;
+	check=M128_DIO_set(200+ADDR_PORT_num,ADDR_PORT_msk,ADDR_PORT_sht,7);
+	if(check!=0) return 1;
+	check=M128_DIO_fpt(ADDR_PORT_num,ADDR_PORT_msk,ADDR_PORT_sht,ASAID);
+	if(check!=0) return 2;
+	return 0;
+}
+
 char M128_DIO_set(char LSByte, char Mask, char shift, char Data) {
 	volatile uint8_t *DDR;
 	if( LSByte<200||LSByte>206 )
@@ -88,11 +97,3 @@ char M128_DIO_fgt(char LSByte, char Mask, char shift, char *Data) {
     return 0;
 }
 
-char M128_ASAID_SET(char ASAID){
-	char check=0;
-	check=M128_DIO_set(200+ADDR_PORT_num,ADDR_PORT_msk,ADDR_PORT_sht,7);
-	if(check!=0) return 1;
-	check=M128_DIO_fpt(ADDR_PORT_num,ADDR_PORT_msk,ADDR_PORT_sht,ASAID);
-	if(check!=0) return 2;
-	return 0;
-}
